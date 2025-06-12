@@ -1,0 +1,12 @@
+build/
+install/
+log/
+.idea/
+data/
+__pycache__/
+allure-report/
+zenohd/
+librealsense/
+realsense-ros/
+_obj/
+assert/
