@@ -1,0 +1,13 @@
+{
+  "name": "main",
+  "version-string": "latest",
+  "dependencies": [
+    "cxxopts",
+    "spdlog",
+    "boost-asio",
+    "boost-beast",
+    "boost-container",
+    "portaudio",
+    "libsndfile"
+  ]
+}

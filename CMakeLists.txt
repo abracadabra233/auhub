@@ -6,10 +6,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-find_package(nlohmann_json CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
-find_library(PortAudio_LIBRARY NAMES portaudio HINTS /usr/local/lib /usr/lib)
-find_library(SndFile_LIBRARY NAMES sndfile HINTS /usr/local/lib /usr/lib)
+find_package(SndFile CONFIG REQUIRED)
+find_package(portaudio CONFIG REQUIRED)
 
 add_subdirectory(3rdparty/uart)
 
@@ -18,8 +17,8 @@ file(GLOB PLAYER_SRC "src/player/*.cc")
 add_library(${PROJECT_NAME} ${AUDIO_SRC} ${PLAYER_SRC})
 target_link_libraries(${PROJECT_NAME} PUBLIC 
      uart
-     ${PortAudio_LIBRARY} 
-     ${SndFile_LIBRARY} 
+     portaudio_static
+     SndFile::sndfile
      spdlog::spdlog)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 
