@@ -9,4 +9,5 @@ zenohd/
 librealsense/
 realsense-ros/
 _obj/
+.vscode/
 assert/

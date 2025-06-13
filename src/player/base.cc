@@ -30,7 +30,7 @@ void PlayerBase::play(std::unique_ptr<audio::AudioBase> audio) {
     playing_.store(false);
     spdlog::info("audio play finished");
   };
-  play_thread_ = std::thread(std::move((play_warp)));
+  play_thread_ = std::thread(std::move(play_warp));
   spdlog::info("start audio play thread");
 }
 

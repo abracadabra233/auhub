@@ -46,6 +46,8 @@ void play_audio(const int ws_port, const std::string &player_type) {
 }
 
 int main(int argc, char *argv[]) {
+  spdlog::set_level(spdlog::level::debug);
+
   auto opts = parseOptions(argc, argv);
 
   auto ws_port = opts["port"].as<int>();

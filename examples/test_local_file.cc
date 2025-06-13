@@ -10,8 +10,8 @@ using namespace auhub::player;
 inline auto parseOptions(int argc, char *argv[]) {
   cxxopts::Options options(argv[0], "Config");
   auto setting = options.add_options("opts");
-  setting("filename", "audio file path", cxxopts::value<std::string>());
-  setting("player_type", "player type",
+  setting("f,filename", "audio file path", cxxopts::value<std::string>());
+  setting("t,player_type", "player type",
           cxxopts::value<std::string>()->default_value("card"));
   setting("h,help", "Print usage");
 
@@ -43,6 +43,8 @@ void play_audio(const std::string &filename, const std::string &player_type) {
 }
 
 int main(int argc, char *argv[]) {
+  spdlog::set_level(spdlog::level::debug);
+
   auto opts = parseOptions(argc, argv);
 
   auto filename = opts["filename"].as<std::string>();

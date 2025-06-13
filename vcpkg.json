@@ -6,8 +6,6 @@
     "spdlog",
     "boost-asio",
     "boost-beast",
-    "boost-container",
-    "portaudio",
-    "libsndfile"
+    "boost-container"
   ]
 }
