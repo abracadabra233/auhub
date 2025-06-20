@@ -16,8 +16,7 @@ namespace audio {
 class WsStreamAudio : public StreamAudio {
  protected:
  public:
-  WsStreamAudio(int ws_port, int sampleRate, int channels,
-                size_t buffer_size = 1024 * 1024);
+  WsStreamAudio(int ws_port, int sampleRate, int channels);
 
   ~WsStreamAudio();
 

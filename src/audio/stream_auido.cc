@@ -3,39 +3,38 @@
 namespace auhub {
 namespace audio {
 
-StreamAudio::StreamAudio(int sampleRate, int channels, size_t buffer_size)
-    : buffer(buffer_size) {
+StreamAudio::StreamAudio(int sampleRate, int channels) {
   info.samplerate = sampleRate;
   info.channels = channels;
   assert(sampleRate == 16000 && channels == 1);
 }
 
 size_t StreamAudio::read(short *out_ptr, unsigned long n_samples) {
-  const size_t read_samples = buffer.pop(out_ptr, n_samples);
-  spdlog::debug("need {} frames; read {} frames", n_samples, read_samples);
-  return read_samples;
+  std::unique_lock<std::mutex> lock(buffer_mutex);
+  if (n_samples > buffer.size()) {
+    spdlog::warn("need {} frames, but only {} left in buffer", n_samples,
+                 buffer.size());
+    n_samples = buffer.size();
+  }
+
+  std::copy(buffer.begin(), buffer.begin() + n_samples, out_ptr);
+  buffer.erase(buffer.begin(), buffer.begin() + n_samples);
+
+  spdlog::info("read {} n_samples", n_samples);
+  return n_samples;
 }
 
 void StreamAudio::push(const std::vector<short> &audio, bool complete) {
-  const size_t pushed_samples = buffer.push(audio.data(), audio.size());
-
-  if (pushed_samples < audio.size()) {
-    spdlog::warn(
-        "failed to push all samples (pushed={}, total={} buffer size={})",
-        pushed_samples, audio.size(), buffer.read_available());
-  }
+  std::lock_guard<std::mutex> lock(buffer_mutex);
+  buffer.insert(buffer.end(), audio.begin(), audio.end());
 
   if (complete) {
     load_completed.store(true);
   }
-
-  spdlog::debug("push {} samples, Audio load completed {}", pushed_samples,
-                complete);
+  spdlog::info("push {}samples, load_completed {}", audio.size(), complete);
 }
 
-size_t StreamAudio::getRemainPCMCount() {
-  return buffer.read_available();  // 直接返回队列中可读的数据量
-}
+size_t StreamAudio::getRemainPCMCount() { return buffer.size(); };
 
 }  // namespace audio
 }  // namespace auhub

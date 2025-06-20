@@ -10,3 +10,5 @@ foreach(SRC_FILE ${SRC})
         cxxopts::cxxopts
         auhub)
 endforeach()
+
+add_subdirectory(ws_stream_player)

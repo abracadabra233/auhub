@@ -1,4 +1,4 @@
-#include "auhub/audio/ws_stream_auido.h"
+#include "ws_stream_auido.h"
 
 namespace auhub {
 namespace audio {
@@ -80,9 +80,8 @@ void WsStreamAudio::on_accept(beast::error_code ec, tcp::socket socket) {
   // do_accept();
 }
 
-WsStreamAudio::WsStreamAudio(int ws_port, int sampleRate, int channels,
-                             size_t buffer_size)
-    : StreamAudio(sampleRate, channels, buffer_size),
+WsStreamAudio::WsStreamAudio(int ws_port, int sampleRate, int channels)
+    : StreamAudio(sampleRate, channels),
       ioc_(1),
       acceptor_(ioc_),
       work_guard_(asio::make_work_guard(ioc_)) {

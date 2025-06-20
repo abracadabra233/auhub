@@ -15,7 +15,6 @@ void PlayerBase::play(std::unique_ptr<audio::AudioBase> audio) {
   if (playing_.load()) {
     spdlog::warn("audio is playing,stop first!");
     stop();
-    return;
   }
   // todo?按理应该不需要这段，play_thread_执行完后应该自动销毁，第二次播放时不需要手动join
   if (play_thread_.joinable()) {
@@ -42,7 +41,6 @@ void PlayerBase::play(std::shared_ptr<audio::AudioBase> audio) {
   if (playing_.load()) {
     spdlog::warn("audio is playing,stop first!");
     stop();
-    return;
   }
   // todo?按理应该不需要这段，play_thread_执行完后应该自动销毁，第二次播放时不需要手动join
   if (play_thread_.joinable()) {

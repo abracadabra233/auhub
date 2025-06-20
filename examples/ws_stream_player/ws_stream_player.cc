@@ -1,8 +1,8 @@
 #include <cxxopts.hpp>
 
-#include "auhub/audio/ws_stream_auido.h"
 #include "auhub/player/card_player.h"
 #include "auhub/player/uart_player.h"
+#include "ws_stream_auido.h"
 
 using namespace auhub::audio;
 using namespace auhub::player;
