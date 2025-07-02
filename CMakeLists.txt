@@ -6,14 +6,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
+# Vcpkg integration
+# Make sure CMAKE_TOOLCHAIN_FILE is set when configuring CMake, e.g.:
+# cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=[path to vcpkg]/scripts/buildsystems/vcpkg.cmake
 find_package(spdlog CONFIG REQUIRED)
-find_library(PortAudio_LIBRARY NAMES portaudio HINTS 
-    /usr/lib /usr/lib/x86_64-linux-gnu /usr/local/lib NO_DEFAULT_PATH)
-find_library(SndFile_LIBRARY NAMES sndfile HINTS
-    /usr/lib /usr/lib/x86_64-linux-gnu /usr/local/lib NO_DEFAULT_PATH)
+find_package(Sndfile CONFIG REQUIRED) # libsndfile provides Sndfile target
+find_package(PortAudio CONFIG REQUIRED)
 
-message(STATUS "PortAudio_LIBRARY: ${PortAudio_LIBRARY}")
-message(STATUS "SndFile_LIBRARY: ${SndFile_LIBRARY}")
+message(STATUS "Found spdlog: ${spdlog_FOUND}")
+message(STATUS "Found Sndfile: ${Sndfile_FOUND}")
+message(STATUS "Found PortAudio: ${PortAudio_FOUND}")
 
 add_subdirectory(3rdparty/uart)
 
@@ -22,8 +24,8 @@ file(GLOB PLAYER_SRC "src/player/*.cc")
 add_library(${PROJECT_NAME} ${AUDIO_SRC} ${PLAYER_SRC})
 target_link_libraries(${PROJECT_NAME} PUBLIC 
     uart
-    ${PortAudio_LIBRARY} 
-    ${SndFile_LIBRARY}
+    Sndfile::libsndfile # Official target name for libsndfile
+    PortAudio::portaudio # Official target name for portaudio
     spdlog::spdlog)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 

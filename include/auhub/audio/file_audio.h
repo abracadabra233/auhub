@@ -13,7 +13,7 @@ class FileAudio : public AudioBase {
   explicit FileAudio(const std::string &filePath);
   ~FileAudio();
 
-  size_t read(short *out_ptr, unsigned long n_samples) override;
+  size_t read(short *out_ptr, unsigned long n_frames) override;
   size_t getRemainPCMCount() override;
 };
 

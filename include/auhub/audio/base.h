@@ -13,7 +13,10 @@ class AudioBase {
  public:
   SF_INFO info{};
   std::atomic<bool> load_completed{false};
-  virtual size_t read(short *out_ptr, unsigned long n_samples) = 0;
+  // Read 'n_frames' of audio data into out_ptr.
+  // For stereo audio, this means n_frames * 2 short samples will be read.
+  // Returns the number of frames actually read.
+  virtual size_t read(short *out_ptr, unsigned long n_frames) = 0;
   virtual size_t getRemainPCMCount() = 0;
 
   ~AudioBase() = default;

@@ -1,8 +1,10 @@
 {
-  "name": "main",
-  "version-string": "latest",
+  "name": "auhub-main",
+  "version-string": "0.1.0",
   "dependencies": [
     "cxxopts",
-    "spdlog"
+    "spdlog",
+    "libsndfile",
+    "portaudio"
   ]
 }

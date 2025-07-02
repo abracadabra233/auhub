@@ -1,6 +1,7 @@
 #include "auhub/player/card_player.h"
 
 #include <spdlog/spdlog.h>
+#include <vector> // For std::vector
 
 namespace auhub {
 namespace player {
@@ -14,8 +15,24 @@ CardPlayer::CardPlayer() {
   }
 }
 
+CardPlayer::~CardPlayer() {
+  PaError err = Pa_Terminate();
+  if (err != paNoError) {
+    spdlog::error("system error, portAudio terminate failed: {}",
+                  Pa_GetErrorText(err));
+  }
+}
+
 bool CardPlayer::play_(audio::AudioBase *audio) {
-  if (!audio || audio->info.channels <= 0) return false;
+  if (!audio || audio->info.channels <= 0) {
+    spdlog::error("CardPlayer::play_ called with invalid audio source.");
+    return false;
+  }
+  if (audio->info.samplerate <= 0) {
+    spdlog::error("CardPlayer::play_ audio source has invalid sample rate: {}", audio->info.samplerate);
+    return false;
+  }
+
 
   PaStreamParameters params;
   params.device = Pa_GetDefaultOutputDevice();
@@ -33,7 +50,6 @@ bool CardPlayer::play_(audio::AudioBase *audio) {
   if (err != paNoError) {
     spdlog::error("system error, failed to open stream:  {}",
                   Pa_GetErrorText(err));
-    Pa_Terminate();
     return false;
   }
 
@@ -41,8 +57,7 @@ bool CardPlayer::play_(audio::AudioBase *audio) {
   if (err != paNoError) {
     spdlog::error("system error, failed to start stream:  {}",
                   Pa_GetErrorText(err));
-    Pa_CloseStream(pa_stream);
-    Pa_Terminate();
+    Pa_CloseStream(pa_stream); // Close the stream if start fails
     return false;
   }
 
@@ -63,24 +78,40 @@ int CardPlayer::paCallback(const void *, void *outputBuffer,
   if (!playing_.load()) {
     return paComplete;
   }
-  static short buffer[128];
 
   auto *audio = static_cast<audio::AudioBase *>(userData);
-  // todo 如果是多通道，得修改framesPerBuffer的值
-  size_t readCount = audio->read(buffer, framesPerBuffer);
+  if (!audio || audio->info.channels == 0) { // Basic check
+    return paAbort; // Or paComplete, depending on desired behavior for bad state
+  }
+
+  // Dynamically allocate buffer for interleaved short samples
+  std::vector<short> local_buffer(framesPerBuffer * audio->info.channels);
+
+  // audio->read expects number of frames, and reads frames * channels samples
+  size_t frames_read = audio->read(local_buffer.data(), framesPerBuffer);
 
   float *out = static_cast<float *>(outputBuffer);
-  std::transform(buffer, buffer + readCount, out, [](short sample) {
-    return static_cast<float>(sample) / 32768.0f;
+  size_t samples_read = frames_read * audio->info.channels;
+
+  // Convert read samples (shorts) to float output
+  std::transform(local_buffer.data(), local_buffer.data() + samples_read, out, [](short sample) {
+    return static_cast<float>(sample) / 32768.0f; // Assuming 16-bit signed PCM
   });
 
-  if (readCount < framesPerBuffer) {
-    const sf_count_t remaining = framesPerBuffer - readCount;
-    std::fill_n(out + readCount * audio->info.channels,
-                remaining * audio->info.channels, 0.0f);
+  // If fewer frames were read than requested by PortAudio, fill the rest with silence.
+  if (frames_read < framesPerBuffer) {
+    size_t remaining_frames = framesPerBuffer - frames_read;
+    size_t remaining_samples = remaining_frames * audio->info.channels;
+    float *fill_start_ptr = out + samples_read; // Start filling after the data we just wrote
+
+    std::fill_n(fill_start_ptr, remaining_samples, 0.0f);
 
     if (audio->load_completed.load()) {
-      spdlog::info("audio data already play finished");
+      // This condition might be true if it's the very end of the stream
+      // and load_completed was set by another thread right after audio->read returned less.
+      // Or if audio->read itself indicates end-of-stream and sets load_completed.
+      // For now, we trust that if frames_read < framesPerBuffer, it's either EOF or an issue.
+      spdlog::info("Audio data play finished or stream ended prematurely.");
       return paComplete;
     } else {
       spdlog::warn("need to read {} frames, but audio remain_framse {}",

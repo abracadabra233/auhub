@@ -10,6 +10,7 @@ namespace player {
 class CardPlayer : public PlayerBase {
  public:
   CardPlayer();
+  ~CardPlayer();
 
  protected:
   bool play_(audio::AudioBase *audio) override;

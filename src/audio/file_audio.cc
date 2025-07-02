@@ -17,14 +17,19 @@ FileAudio::~FileAudio() {
   }
 };
 
-size_t FileAudio::read(short *out_ptr, unsigned long n_samples) {
-  if (!file) return 0;
-  size_t readSize = sf_read_short(file, out_ptr, n_samples);
+size_t FileAudio::read(short *out_ptr, unsigned long n_frames) {
+  if (!file || info.channels == 0) return 0; // Sanity check for channels
+  // sf_read_short reads items (shorts). We want to read n_frames for all channels.
+  size_t items_to_read = n_frames * info.channels;
+  sf_count_t items_read = sf_read_short(file, out_ptr, items_to_read);
 
-  return readSize;
+  // Return the number of frames read.
+  return static_cast<size_t>(items_read / info.channels);
 };
 
 size_t FileAudio::getRemainPCMCount() {
+  // This should return remaining frames. sf_seek with SEEK_CUR gives current frame position.
+  // So, info.frames - current_frame_position is correct.
   return info.frames - sf_seek(file, 0, SEEK_CUR);
 };
 }  // namespace audio
