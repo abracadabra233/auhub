@@ -1,4 +1,5 @@
 #include <cxxopts.hpp>
+#include <variant>
 
 #include "auhub/player/card_player.h"
 #include "auhub/player/uart_player.h"
@@ -25,24 +26,29 @@ inline auto parseOptions(int argc, char *argv[]) {
   return opts;
 }
 
+using PlayerVariant = std::variant<std::shared_ptr<PlayerBase<UartPlayer>>,
+                                   std::shared_ptr<PlayerBase<CardPlayer>>>;
+
 void play_audio(const int ws_port, const std::string &player_type) {
-  std::unique_ptr<PlayerBase> player = nullptr;
+  auto audio = AudioBase::create<WsStreamAudio>(ws_port, 16000, 1);
+  PlayerVariant player;
+
   if (player_type == "uart") {
-    player = std::make_unique<UartPlayer>();
-    spdlog::info("uart player {}", ws_port);
+    player = UartPlayer::getInstance();
   } else if (player_type == "card") {
-    player = std::make_unique<CardPlayer>();
-    spdlog::info("card player {}", ws_port);
+    player = CardPlayer::getInstance();
   } else {
     throw std::invalid_argument(
         "Invalid player type. Must be 'uart' or 'card'");
   }
 
-  std::unique_ptr<AudioBase> audio =
-      AudioBase::create<WsStreamAudio>(ws_port, 16000, 1);
-
-  player->play(std::move(audio));
-  std::this_thread::sleep_for(std::chrono::seconds(500));
+  std::visit(
+      [&audio](auto &&p) {
+        p->play(std::move(audio));
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+        p->stop();
+      },
+      player);
 }
 
 int main(int argc, char *argv[]) {

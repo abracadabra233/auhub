@@ -2,10 +2,16 @@
 
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
+
 namespace auhub {
 namespace player {
 
-CardPlayer::CardPlayer() {
+std::shared_ptr<BlockingValue<float>> CardPlayer::progress_ = nullptr;
+
+CardPlayer::CardPlayer(std::shared_ptr<BlockingValue<float>> progress) {
+  progress_ = progress;
+
   PaError err = Pa_Initialize();
   if (err != paNoError) {
     spdlog::error("system error, portAudio init failed:  {}",
@@ -13,6 +19,8 @@ CardPlayer::CardPlayer() {
     throw std::runtime_error("portAudio init failed");
   }
 }
+
+CardPlayer::~CardPlayer() { progress_ = nullptr; }
 
 bool CardPlayer::play_(audio::AudioBase *audio) {
   if (!audio || audio->info.channels <= 0) return false;
@@ -74,6 +82,12 @@ int CardPlayer::paCallback(const void *, void *outputBuffer,
     return static_cast<float>(sample) / 32768.0f;
   });
 
+  if (progress_) {
+    float progress = 1.0f - (static_cast<float>(audio->getRemainPCMCount()) /
+                             audio->info.frames);
+    auto progress_ptr = std::make_unique<float>(progress);
+    progress_->Set(std::move(progress_ptr));
+  }
   if (readCount < framesPerBuffer) {
     const sf_count_t remaining = framesPerBuffer - readCount;
     std::fill_n(out + readCount * audio->info.channels,
