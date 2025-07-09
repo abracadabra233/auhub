@@ -20,7 +20,7 @@ size_t StreamAudio::read(short *out_ptr, unsigned long n_samples) {
   std::copy(buffer.begin(), buffer.begin() + n_samples, out_ptr);
   buffer.erase(buffer.begin(), buffer.begin() + n_samples);
 
-  spdlog::info("read {} n_samples", n_samples);
+  spdlog::debug("read {} n_samples", n_samples);
   return n_samples;
 }
 
@@ -31,7 +31,7 @@ void StreamAudio::push(const std::vector<short> &audio, bool complete) {
   if (complete) {
     load_completed.store(true);
   }
-  spdlog::info("push {}samples, load_completed {}", audio.size(), complete);
+  spdlog::debug("push {}samples, load_completed {}", audio.size(), complete);
 }
 
 size_t StreamAudio::getRemainPCMCount() { return buffer.size(); };

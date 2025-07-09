@@ -31,7 +31,7 @@ bool UartPlayer::play_(audio::AudioBase *audio) {
 
   while (playing_.load() && audio) {
     if (audio->load_completed.load() && audio->getRemainPCMCount() <= 0) {
-      spdlog::info("UartPlayer completed");
+      spdlog::debug("UartPlayer completed");
       break;
     }
 
@@ -44,7 +44,7 @@ bool UartPlayer::play_(audio::AudioBase *audio) {
 
     //! 可能阻塞!!
     if (RecvAudioByUart(szRecvBuf)) {
-      spdlog::info("RecvAudioByUart success");
+      spdlog::debug("RecvAudioByUart success");
     } else {
       spdlog::warn("RecvAudioByUart failed");
     }

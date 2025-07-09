@@ -94,7 +94,7 @@ int CardPlayer::paCallback(const void *, void *outputBuffer,
                 remaining * audio->info.channels, 0.0f);
 
     if (audio->load_completed.load()) {
-      spdlog::info("audio data already play finished");
+      spdlog::debug("audio data already play finished");
       return paComplete;
     } else {
       spdlog::warn("need to read {} frames, but audio remain_framse {}",
