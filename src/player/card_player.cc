@@ -7,11 +7,7 @@
 namespace auhub {
 namespace player {
 
-std::shared_ptr<BlockingValue<float>> CardPlayer::progress_ = nullptr;
-
-CardPlayer::CardPlayer(std::shared_ptr<BlockingValue<float>> progress) {
-  progress_ = progress;
-
+CardPlayer::CardPlayer() {
   PaError err = Pa_Initialize();
   if (err != paNoError) {
     spdlog::error("system error, portAudio init failed:  {}",
@@ -20,9 +16,13 @@ CardPlayer::CardPlayer(std::shared_ptr<BlockingValue<float>> progress) {
   }
 }
 
-CardPlayer::~CardPlayer() { progress_ = nullptr; }
+struct CallbackData {
+  audio::AudioBase *audio;
+  std::shared_ptr<PlayProgress> progress;
+};
 
-bool CardPlayer::play_(audio::AudioBase *audio) {
+bool CardPlayer::play_(audio::AudioBase *audio,
+                       std::shared_ptr<PlayProgress> progress) {
   if (!audio || audio->info.channels <= 0) return false;
 
   PaStreamParameters params;
@@ -35,9 +35,12 @@ bool CardPlayer::play_(audio::AudioBase *audio) {
   PaStream *pa_stream;
   PaError err;
 
-  err =
-      Pa_OpenStream(&pa_stream, nullptr, &params, audio->info.samplerate,
-                    paFramesPerBufferUnspecified, paClipOff, paCallback, audio);
+  auto callbackData =
+      std::make_unique<CallbackData>(CallbackData{audio, progress});
+
+  err = Pa_OpenStream(&pa_stream, nullptr, &params, audio->info.samplerate,
+                      paFramesPerBufferUnspecified, paClipOff, paCallback,
+                      callbackData.get());
   if (err != paNoError) {
     spdlog::error("system error, failed to open stream:  {}",
                   Pa_GetErrorText(err));
@@ -73,7 +76,10 @@ int CardPlayer::paCallback(const void *, void *outputBuffer,
   }
   static short buffer[128];
 
-  auto *audio = static_cast<audio::AudioBase *>(userData);
+  auto *data = static_cast<CallbackData *>(userData);
+  auto *audio = data->audio;
+  auto progress_ptr = data->progress;
+
   // todo 如果是多通道，得修改framesPerBuffer的值
   size_t readCount = audio->read(buffer, framesPerBuffer);
 
@@ -82,11 +88,10 @@ int CardPlayer::paCallback(const void *, void *outputBuffer,
     return static_cast<float>(sample) / 32768.0f;
   });
 
-  if (progress_) {
+  if (progress_ptr) {
     float progress = 1.0f - (static_cast<float>(audio->getRemainPCMCount()) /
                              audio->info.frames);
-    auto progress_ptr = std::make_unique<float>(progress);
-    progress_->Set(std::move(progress_ptr));
+    progress_ptr->Set(progress);
   }
   if (readCount < framesPerBuffer) {
     const sf_count_t remaining = framesPerBuffer - readCount;

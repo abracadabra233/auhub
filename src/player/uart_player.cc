@@ -6,7 +6,12 @@ namespace auhub {
 namespace player {
 UartPlayer::UartPlayer() {}
 
-bool UartPlayer::play_(audio::AudioBase *audio) {
+bool UartPlayer::play_(audio::AudioBase *audio,
+                       std::shared_ptr<PlayProgress> progress) {
+  if (progress) {
+    throw std::runtime_error("not support progress for uart player");
+  }
+
   static bool inited = false;
   if (!inited) {
     Init_uart_thread(6);

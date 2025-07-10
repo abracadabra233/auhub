@@ -25,17 +25,15 @@ inline auto parseOptions(int argc, char *argv[]) {
 
 void play_audio(const std::string &filename) {
   auto audio = AudioBase::create<FileAudio>(filename);
+  auto player = CardPlayer::getInstance();
 
-  std::shared_ptr<BlockingValue<float>> progress =
-      std::make_shared<BlockingValue<float>>();
-  auto player = CardPlayer::getInstance(progress);
-
-  player->play(std::move(audio));
+  std::shared_ptr<PlayProgress> progress = std::make_shared<PlayProgress>();
+  player->play(std::move(audio), progress);
 
   while (true) {
-    auto p = progress->Get();
-    spdlog::info("progress: {}", *p);
-    if (*p >= 1.0) {
+    float p = progress->Get();
+    spdlog::info("progress: {}", p);
+    if (p >= 1.0) {
       spdlog::info("play finished");
       break;
     }

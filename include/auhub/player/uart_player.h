@@ -20,7 +20,8 @@ class UartPlayer : public PlayerBase<UartPlayer> {
   UartPlayer();
 
  protected:
-  bool play_(audio::AudioBase* audio) override;
+  bool play_(audio::AudioBase* audio,
+             std::shared_ptr<PlayProgress> progress) override;
 
  private:
   char szSendBuf[BUFFER_SIZE];
